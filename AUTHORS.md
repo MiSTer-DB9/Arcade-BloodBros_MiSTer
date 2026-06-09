@@ -17,7 +17,7 @@ most restrictive upstream (JTFRAME / JTCORES).
 
 | Component | Author | Project | License |
 |-----------|--------|---------|---------|
-| **FX68K** — cycle-accurate M68000 core | Frederic Requin | [ijor/fx68k](https://github.com/ijor/fx68k) | LGPL-2.1 |
+| **FX68K** — cycle-accurate M68000 core | Jorge Cwik ([ijor](https://github.com/ijor)) | [ijor/fx68k](https://github.com/ijor/fx68k) | LGPL-2.1 |
 | **T80** — Z80 core | Daniel Wallner, MikeJ | [MiSTer-devel/T80](https://github.com/MiSTer-devel/T80) | BSD / GPL |
 | **JTFRAME / JTCORES** — framework, filters, tilemap, etc. | Jose Tejada ([@topapate](https://twitter.com/topapate)) | [jotego/jtcores](https://github.com/jotego/jtcores) | GPL-3 |
 | **JTOPL** — YM3812 OPL2 FM synthesizer | Jose Tejada | [jotego/jtopl](https://github.com/jotego/jtopl) | GPL-3 |

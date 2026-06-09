@@ -8,7 +8,7 @@ Blood Bros is a **shooting gallery** game (Cabal-style) running on
 
 ## Status
 
-**Current version: 1.0** (May 2026) — first public release.
+**Current version: 1.1** (June 2026).
 
 The core runs the full game with audio and inputs.
 
@@ -21,6 +21,9 @@ The core runs the full game with audio and inputs.
 - Text layer (8×8, 4bpp, 32×32 tilemap)
 - 16×16 sprites with priority callback (Seibu SEI0210)
 - Seibu CRTC registers (scroll, layer enable, flip screen)
+- **Hardware-accurate DIP switches**: Coin Mode, Coinage, Starting Coin, Lives,
+  Bonus Life, Difficulty, Allow Continue, Demo Sounds
+- **Analog VGA H-Shift / V-Shift** OSD options for fine alignment on 15 kHz CRTs
 - MiSTer OSD with audio mixer (FM/OKI volume), per-layer debug toggles
 - Pause overlay with logo + supporters scroll
 
@@ -126,7 +129,7 @@ Arcade-BloodBros_MiSTer/
 - **Jose Tejada** ([@jotego](https://github.com/jotego)) for JTOPL (YM3812),
   JT6295 (OKI M6295) and the JTFRAME framework.
 - **Daniel Wallner** and **MikeJ** for the T80 (Z80) core.
-- **Frederic Requin** and contributors for the **FX68K** cycle-accurate
+- **Jorge Cwik** ([ijor](https://github.com/ijor)) for the **FX68K** cycle-accurate
   M68000 core.
 - **Sorgelig** and the **MiSTer-devel team** for the framework, SDRAM
   controller and Template.

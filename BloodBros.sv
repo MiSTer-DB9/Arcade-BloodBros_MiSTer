@@ -229,7 +229,8 @@ localparam CONF_STR = {
 	"P1O[7:5],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer,HV-Integer;",
 	"P1O[19],Refresh Rate,Original 59.4Hz,60Hz;",
 	"P1O[18],Clean Pause,Off,On;",
-	"P1O[125:120],Analog VGA H-Shift,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63;",
+	"P1O[97:92],Analog VGA H-Shift,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63;",
+	"P1O[25:23],Analog VGA V-Shift,0,1,2,3,4,5,6,7;",
 	"-;",
 	"DIP;",
 	"-;",
@@ -298,16 +299,15 @@ wire [7:0] p1_input = {1'b1, ~joy0[6], ~joy0[5], ~joy0[4], ~joy0[0], ~joy0[1], ~
 wire [7:0] p2_input = {1'b1, ~joy1[6], ~joy1[5], ~joy1[4], ~joy1[0], ~joy1[1], ~joy1[2], ~joy1[3]};
 wire [15:0] p1_p2_input = {p2_input, p1_input};
 
-// SD Gundam SYSTEM port ($E0004) — verified MAME dcon.cpp:345-356
+// Blood Bros SYSTEM port ($0E0004) IN1 — verified MAME bloodbro.cpp:688
 //   bit0  = START1     (active LOW)
 //   bit4  = START2     (active LOW)
-//   bit8  = SERVICE    (active LOW)  PORT_SERVICE_NO_TOGGLE
+//   bit12 = SERVICE1   (0x1000, active LOW) IPT_SERVICE1
 //   altri = UNKNOWN/UNUSED → tied 1
 // Coin inputs NON sono qui: vanno via SEIBU_COIN_INPUTS → Z80 → soundlatch sub2main.
-// Service esposto come DIP bit 14: dip_sw[14]=0 (id "On") → service attivo (bit8=0).
-wire service_mode = ~dip_sw[14];
-wire [15:0] system_input16 = {7'h7F, ~service_mode,         // [15:8]
-                              3'b111, ~joy1[10], 3'b111, ~joy0[10]}; // [7:0]
+// Service non esposto in OSD (bit 12 IN1 fisso a 1 = idle).
+wire [15:0] system_input16 = {8'hFF,                                   // [15:8]: idle
+                              3'b111, ~joy1[10], 3'b111, ~joy0[10]};   // [7:0] : bit4=START2, bit0=START1
 
 // Seibu coin input (ACTIVE_HIGH per SEIBU_COIN_INPUTS macro): bit0=COIN1, bit1=COIN2.
 // Letto dal Z80 a 0x4013 → coin_r → soundlatch sub2main → main 68k legge 0xA0004.
@@ -846,23 +846,26 @@ wire [7:0] video_b = video_de_d ? pal_b_b : 8'h00;
 assign CLK_VIDEO = clk_sys;
 assign CE_PIXEL  = ce_pix;
 
-// ── Analog VGA H-Shift ──────────────────────────────────────────────────────
-// Ritarda il segnale HSync inviato al MiSTer rispetto al video.
-// Effetto: sposta solo il VGA analog (l'HDMI scaler rigenera HS proprio).
-// Range: 0..63 ce_pix (~10.5µs a 6 MHz). Default 0 = HSync invariato.
-// Aumentando il valore l'immagine si sposta verso destra sul CRT.
-// osd_vga_hshift e selezione MUX 64:1 registrati per spezzare path lungo
-// status[125:120] → -1 → variable index su shreg 63-bit → pin VGA_HS.
-// HSync è analog-only (HDMI scaler usa HS proprio), 1 ce_pix di latenza
-// extra è invisibile.
+// ── Analog VGA H-Shift / V-Shift ─────────────────────────────────────────────
+// Shift register su HSync/VSync verso il SOLO pin analogico VGA.
+// HDMI scaler usa sync propri, core timing invariato.
+// H-Shift: 0..63 ce_pix (~10.5µs a 6 MHz). V-Shift: 0..7 righe.
 reg [5:0] osd_vga_hshift_d;
-always @(posedge clk_sys) if (ce_pix) osd_vga_hshift_d <= status[125:120];
+always @(posedge clk_sys) if (ce_pix) osd_vga_hshift_d <= status[97:92];
 reg [62:0] hsync_shreg;
 always @(posedge clk_sys) if (ce_pix) hsync_shreg <= {hsync_shreg[61:0], HSync};
 reg vga_hs_reg;
 always @(posedge clk_sys) if (ce_pix) vga_hs_reg <= (osd_vga_hshift_d == 6'd0) ? HSync : hsync_shreg[osd_vga_hshift_d - 6'd1];
 assign VGA_HS    = vga_hs_reg;
-assign VGA_VS    = VSync;
+
+wire line_tick = ce_pix && (timing_hpos == 10'd383);
+reg [2:0] osd_vga_vshift_d;
+always @(posedge clk_sys) if (line_tick) osd_vga_vshift_d <= status[25:23];
+reg [6:0] vsync_line_shreg;
+always @(posedge clk_sys) if (line_tick) vsync_line_shreg <= {vsync_line_shreg[5:0], VSync};
+reg vga_vs_reg;
+always @(posedge clk_sys) if (line_tick) vga_vs_reg <= (osd_vga_vshift_d == 3'd0) ? VSync : vsync_line_shreg[osd_vga_vshift_d - 3'd1];
+assign VGA_VS    = vga_vs_reg;
 
 // Pause overlay: dim video + logo + SUPPORTERS + patron scroll.
 // Modulo standalone 8-bit RGB. OSD "Clean Pause" (status[18]): ON=raw, OFF=overlay.
