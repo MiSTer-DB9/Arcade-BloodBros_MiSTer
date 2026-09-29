@@ -373,7 +373,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1)) hps_io
 	.ioctl_dout(ioctl_dout),
 	.ioctl_wait(ioctl_wait),
 	// [MiSTer-DB9 BEGIN] - DB9/SNAC8 support: joy_raw + remap selector stream
-	.joy_raw(OSD_STATUS ? joy_raw_payload : 16'b0),
+	.joy_raw(joy_raw_payload),
 	.db9_remap_cmd(db9_remap_cmd),
 	.db9_remap_byte_cnt(db9_remap_byte_cnt),
 	.db9_remap_din(db9_remap_din),
